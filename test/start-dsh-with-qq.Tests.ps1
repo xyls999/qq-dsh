@@ -16,4 +16,12 @@ Describe 'Get-LaunchPlan' {
     $plan = Get-LaunchPlan -SnowLumaReady $true -CollectorConnected $false -DshRunning $false
     ($plan -join ',') | Should Be 'Reuse-SnowLuma,Start-Collector,Wait-Collector,Start-DSH'
   }
+
+  It 'retries while SnowLuma brings up its listener ports' {
+    Get-SnowLumaWaitAction -State 'partial' | Should Be 'Retry'
+  }
+
+  It 'rejects a conflicting process instead of waiting for it' {
+    Get-SnowLumaWaitAction -State 'conflict' | Should Be 'Fail'
+  }
 }

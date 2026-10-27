@@ -28,6 +28,17 @@ function Get-LaunchPlan {
   return $plan
 }
 
+function Get-SnowLumaWaitAction {
+  param(
+    [ValidateSet('stopped', 'partial', 'ready', 'conflict')]
+    [string]$State
+  )
+
+  if ($State -eq 'ready') { return 'Complete' }
+  if ($State -eq 'conflict') { return 'Fail' }
+  return 'Retry'
+}
+
 if ($LibraryOnly) { return }
 
 $script:ArchiveRoot = Join-Path $env:USERPROFILE '.dsh\data\qq-archive'
@@ -63,8 +74,9 @@ function Get-SnowLumaState {
 function Wait-ForSnowLuma {
   for ($attempt = 0; $attempt -lt 90; $attempt++) {
     $state = Get-SnowLumaState
-    if ($state -eq 'ready') { return }
-    if ($state -ne 'stopped') { throw "SnowLuma ports are in a partial or conflicting state ($state); refusing to launch another instance." }
+    $action = Get-SnowLumaWaitAction -State $state
+    if ($action -eq 'Complete') { return }
+    if ($action -eq 'Fail') { throw 'Another process owns a SnowLuma port; refusing to continue.' }
     Start-Sleep -Seconds 1
   }
   throw 'SnowLuma did not become ready on ports 5099 and 3001 within 90 seconds.'
