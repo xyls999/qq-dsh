@@ -1,0 +1,31 @@
+{
+  "name": "dsh-qq-local-archive",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "main": "src/dsh-plugin.js",
+  "exports": {
+    ".": "./src/dsh-plugin.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/cli.js start"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
