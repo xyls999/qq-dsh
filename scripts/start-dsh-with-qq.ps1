@@ -39,6 +39,12 @@ function Get-SnowLumaWaitAction {
   return 'Retry'
 }
 
+function Get-SnowLumaStatusCommandAction {
+  param([bool]$Enabled)
+  if ($Enabled) { return 'Block' }
+  return 'Allow'
+}
+
 if ($LibraryOnly) { return }
 
 $script:ArchiveRoot = Join-Path $env:USERPROFILE '.dsh\data\qq-archive'
@@ -143,6 +149,16 @@ try {
   $pluginConfig = Get-Content -LiteralPath $script:PluginConfig -Raw | ConvertFrom-Json
   if ($pluginConfig.modelExportEnabled) {
     throw 'DeepSeek message export is enabled; disable it before using the automatic launcher.'
+  }
+  $oneBotConfigDir = Join-Path $script:SnowLumaRoot 'config'
+  $oneBotConfigs = @(Get-ChildItem -LiteralPath $oneBotConfigDir -Filter 'onebot_*.json' -File)
+  if ($oneBotConfigs.Count -ne 1) { throw 'Expected exactly one SnowLuma account config.' }
+  $snowLumaConfig = Get-Content -LiteralPath $oneBotConfigs[0].FullName -Raw | ConvertFrom-Json
+  if ($null -eq $snowLumaConfig.statusCommand -or $snowLumaConfig.statusCommand.enabled -isnot [bool]) {
+    throw 'Cannot verify that SnowLuma status replies are disabled.'
+  }
+  if ((Get-SnowLumaStatusCommandAction -Enabled $snowLumaConfig.statusCommand.enabled) -eq 'Block') {
+    throw 'SnowLuma status replies are enabled; set statusCommand.enabled to false before starting.'
   }
 
   $snowLumaState = Get-SnowLumaState

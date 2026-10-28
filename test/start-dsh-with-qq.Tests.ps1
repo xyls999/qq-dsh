@@ -24,4 +24,12 @@ Describe 'Get-LaunchPlan' {
   It 'rejects a conflicting process instead of waiting for it' {
     Get-SnowLumaWaitAction -State 'conflict' | Should Be 'Fail'
   }
+
+  It 'blocks startup when SnowLuma status replies are enabled' {
+    Get-SnowLumaStatusCommandAction -Enabled $true | Should Be 'Block'
+  }
+
+  It 'allows startup when SnowLuma status replies are disabled' {
+    Get-SnowLumaStatusCommandAction -Enabled $false | Should Be 'Allow'
+  }
 }
