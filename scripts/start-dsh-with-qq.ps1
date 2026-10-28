@@ -45,6 +45,12 @@ function Get-SnowLumaStatusCommandAction {
   return 'Allow'
 }
 
+function Get-SnowLumaGuardAction {
+  param([bool]$Required, [bool]$Verified)
+  if ($Required -and -not $Verified) { return 'Block' }
+  return 'Allow'
+}
+
 if ($LibraryOnly) { return }
 
 $script:ArchiveRoot = Join-Path $env:USERPROFILE '.dsh\data\qq-archive'
@@ -140,6 +146,26 @@ try {
   $settings = Get-Content -LiteralPath $script:SettingsPath -Raw | ConvertFrom-Json
   $script:SnowLumaRoot = [string]$settings.snowLumaRoot
   $script:DshRoot = [string]$settings.dshRoot
+  $guardSetting = $settings.PSObject.Properties['requireSnowLumaEgressGuard']
+  $guardRequired = $false
+  if ($null -ne $guardSetting) {
+    if ($guardSetting.Value -isnot [bool]) { throw 'requireSnowLumaEgressGuard must be a boolean.' }
+    $guardRequired = $guardSetting.Value
+  }
+  $guardVerified = $false
+  if ($guardRequired) {
+    $guardVerifier = [string]$settings.snowLumaGuardVerifier
+    if ([string]::IsNullOrWhiteSpace($guardVerifier) -or -not (Test-Path -LiteralPath $guardVerifier -PathType Leaf)) {
+      throw 'The required local SnowLuma egress-guard verifier was not found.'
+    }
+    $null = & $script:NodePath $guardVerifier verify $script:SnowLumaRoot 2>$null
+    if ($LASTEXITCODE -ne 0) { throw 'SnowLuma QQ outbound guard verification failed; refusing to start.' }
+    $guardVerified = $true
+    Write-Host 'SnowLuma QQ outbound guard verified.'
+  }
+  if ((Get-SnowLumaGuardAction -Required $guardRequired -Verified $guardVerified) -eq 'Block') {
+    throw 'The required SnowLuma QQ outbound guard is not verified.'
+  }
   foreach ($path in @($script:SnowLumaRoot, $script:DshRoot, $script:CollectorStarter, $script:CollectorCli, $script:PluginConfig)) {
     if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path)) {
       throw "Required startup path not found: $path"

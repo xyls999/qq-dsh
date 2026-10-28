@@ -46,9 +46,13 @@ try {
 ```json
 {
   "snowLumaRoot": "C:\\Path\\to\\SnowLuma",
-  "dshRoot": "C:\\Path\\to\\deepseek-harness"
+  "dshRoot": "C:\\Path\\to\\deepseek-harness",
+  "requireSnowLumaEgressGuard": true,
+  "snowLumaGuardVerifier": "C:\\Path\\to\\snowluma-qq-guard\\install.mjs"
 }
 ```
+
+`requireSnowLumaEgressGuard` is optional and defaults to `false`. When enabled, the launcher runs the local verifier before reusing or starting SnowLuma and stops if the version-pinned guard is missing or changed. The verifier checks an existing local installation; it does not install or modify SnowLuma.
 
 运行 `scripts/install-desktop-shortcut.ps1` 创建 `DSH + QQ 群归档` 桌面入口。该入口复用或启动 SnowLuma，等 `127.0.0.1:5099` 与 OneBot `127.0.0.1:3001` 由同一 SnowLuma 进程监听后启动归档器，再在 DSH Web 尚未运行时执行 `pnpm dsh web`。检测到端口冲突、DeepSeek 出机开启，或 SnowLuma 的 `statusCommand.enabled` 不为 `false` 时会停止，不会启动重复实例。SnowLuma 的内置 `statusCommand` 默认启用，精确收到 `#sl` 时会由 SnowLuma 自己调用 OneBot 发消息；这不是归档器或 DSH 工具发出的。只读归档必须关闭该命令；启动器也会拒绝它仍开启的配置。此检查只覆盖该状态命令，不能限制其他能访问 SnowLuma/OneBot 令牌的代码。直接运行 `pnpm dsh web` 不会触发此启动流程。
 

@@ -32,4 +32,16 @@ Describe 'Get-LaunchPlan' {
   It 'allows startup when SnowLuma status replies are disabled' {
     Get-SnowLumaStatusCommandAction -Enabled $false | Should Be 'Allow'
   }
+
+  It 'blocks startup when the required egress guard is missing' {
+    Get-SnowLumaGuardAction -Required $true -Verified $false | Should Be 'Block'
+  }
+
+  It 'allows startup when the required egress guard is verified' {
+    Get-SnowLumaGuardAction -Required $true -Verified $true | Should Be 'Allow'
+  }
+
+  It 'does not require the optional egress guard by default' {
+    Get-SnowLumaGuardAction -Required $false -Verified $false | Should Be 'Allow'
+  }
 }
